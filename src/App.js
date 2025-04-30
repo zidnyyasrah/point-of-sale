@@ -1,23 +1,30 @@
-import logo from './logo.svg';
-import './App.css';
+// src/App.js
+import React, { useState } from "react";
+import POS from "./POS";
+import Inventory from "./Inventory";
+import Settings from "./Settings";
+import Accounts from "./Accounts";
+import Tabs from "./components/Tabs";
+import TransactionHistory from "./TransactionHistory";
 
 function App() {
+  const [selectedTab, setSelectedTab] = useState("pos");
+
+  const handleTabChange = (tab) => {
+    setSelectedTab(tab);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{ padding: "20px" }}>
+      {/* Tabs Component */}
+      <Tabs selectedTab={selectedTab} setSelectedTab={handleTabChange} />
+
+      {/* Conditional Rendering Based on Selected Tab */}
+      {selectedTab === "pos" && <POS />}
+      {selectedTab === "inventory" && <Inventory />}
+      {selectedTab === "settings" && <Settings />}
+      {selectedTab === "transactionHistory" && <TransactionHistory />}
+      {selectedTab === "accounts" && <Accounts />}
     </div>
   );
 }
