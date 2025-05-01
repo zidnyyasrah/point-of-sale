@@ -8,12 +8,18 @@ import Tabs from "./components/Tabs";
 import TransactionHistory from "./TransactionHistory";
 import Analytics from "./Analytics";
 
+
+
+
+
 function App() {
   const [selectedTab, setSelectedTab] = useState("pos");
 
   const handleTabChange = (tab) => {
     setSelectedTab(tab);
   };
+
+
 
   return (
     <div style={{ padding: "20px" }}>
@@ -28,7 +34,10 @@ function App() {
       {selectedTab === "accounts" && <Accounts />}
       {selectedTab === "analytics" && <Analytics />}
     </div>
+
+    
   );
 }
+
 
 export default App;

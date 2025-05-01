@@ -135,7 +135,9 @@ const Inventory = () => {
   );
 
   return (
+    
     <div style={styles.container}>
+      
       <h2>Manage Inventory</h2>
       <div style={styles.header}>
         
@@ -214,22 +216,20 @@ const Inventory = () => {
       )}
 
       
-
-      <h3>Daftar Produk</h3>
+      <hr></hr>
       {filteredProducts.length > 0 ? (
         <ul style={styles.productList}>
           <li style={{ ...styles.listItem, fontWeight: 'bold' }}>
-            <span style={{ flex: 0.3 }}>ID</span>
             <span style={{ flex: 1 }}>Nama Barang</span>
             <span style={{ flex: 0.5, textAlign: "right" }}>Harga Beli</span>
             <span style={{ flex: 0.5, textAlign: "right" }}>Harga Jual</span>
             <span style={{ flex: 0.3, textAlign: "right" }}>Stok</span>
             <span style={{ flex: 0.3, textAlign: "right" }}>Hapus</span>
+            
           </li>
+          
           {filteredProducts.map((product) => (
             <li key={product.id} style={styles.listItem}>
-              {/* ID */}
-              <span style={{ flex: 0.3 }}>{product.id}</span>
               {/* Item Name */}
               <span style={{ flex: 1 }}>{product.name}</span>
               {/* Price Buy */}
@@ -274,7 +274,6 @@ const styles = {
   },
   container: {
     padding: "20px",
-    fontFamily: "Arial, sans-serif",
   },
   controls: {
     display: "flex", // Container for button(s) and search bar

@@ -52,7 +52,9 @@ const Tabs = ({ selectedTab, setSelectedTab }) => {
         </button>
 
       </div>
+      
     </div>
+    
   );
 };
 

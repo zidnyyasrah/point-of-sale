@@ -282,7 +282,7 @@ const POS = () => {
   // Basic Inline Styles (You'd likely use CSS Modules or Styled Components)
   const styles = {
     container: {
-      fontFamily: "Arial, sans-serif",
+      
       padding: "20px",
       backgroundColor: "#f4f4f4",
       display: "flex",
@@ -368,7 +368,7 @@ const POS = () => {
       gridTemplateColumns: "2fr 1fr 0.5fr 1fr 0.5fr",
       padding: "10px",
       textAlign: "left",
-      fontWeight: "bold",
+      
     },
     tableRow: {
       display: "grid",

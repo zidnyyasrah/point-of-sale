@@ -4,6 +4,7 @@ import { formatRupiah } from './components/utils/format'
 import './styles/DatePickerStyles.css'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
+import calendarIcon from "./assets/calendar.png";
 
 const TransactionHistory = () => {
   const [transactions, setTransactions] = useState([])
@@ -14,10 +15,15 @@ const TransactionHistory = () => {
   const [endDate, setEndDate] = useState(null)
 
   useEffect(() => {
-    fetchTransactions()
+    fetchAndSortTransactions()
   }, [])
 
-  const fetchTransactions = async () => {
+  // heading
+  const [filterHeading, setFilterHeading] = useState(
+    'Riwayat Transaksi Hari Ini'
+  ) // Default to today
+
+  const fetchAndSortTransactions = async () => {
     setLoading(true)
     setError(null)
     try {
@@ -26,21 +32,19 @@ const TransactionHistory = () => {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data = await response.json()
-      // Parse the date string into a Date object and format it
       const processedTransactions = data.map(transaction => {
         let transactionDate
         if (transaction.timestamp) {
-          // Changed from transaction.date to transaction.timestamp
           try {
-            transactionDate = new Date(transaction.timestamp) // Changed from transaction.date to transaction.timestamp
+            transactionDate = new Date(transaction.timestamp)
             if (isNaN(transactionDate.getTime())) {
               console.error(
                 'Invalid date:',
                 transaction.timestamp,
                 'for transaction:',
                 transaction
-              ) // Changed from transaction.date to transaction.timestamp
-              transactionDate = null // Or set a default date
+              )
+              transactionDate = null
             }
           } catch (e) {
             console.error(
@@ -49,19 +53,28 @@ const TransactionHistory = () => {
               e,
               'for transaction:',
               transaction
-            ) // Changed from transaction.date to transaction.timestamp
-            transactionDate = null // Or set a default date
+            )
+            transactionDate = null
           }
         } else {
           console.warn('Date is missing for transaction:', transaction)
           transactionDate = null
         }
-
         return {
           ...transaction,
           date: transactionDate // Store the Date object
         }
       })
+
+      // Sort transactions by date (newest first)
+      processedTransactions.sort((a, b) => {
+        // Handle cases where date might be null
+        if (!a.date && !b.date) return 0
+        if (!a.date) return 1 // b comes first
+        if (!b.date) return -1 // a comes first
+        return b.date.getTime() - a.date.getTime() // Newest first
+      })
+
       setTransactions(processedTransactions)
     } catch (error) {
       console.error('Error fetching transactions:', error)
@@ -123,6 +136,7 @@ const TransactionHistory = () => {
     oneDaysAgo.setDate(today.getDate())
     setSelectedDate(oneDaysAgo)
     setEndDate(today)
+    setFilterHeading('Riwayat Transaksi Hari Ini')
   }
   const handleLast7Days = () => {
     const today = new Date()
@@ -130,6 +144,7 @@ const TransactionHistory = () => {
     sevenDaysAgo.setDate(today.getDate() - 7)
     setSelectedDate(sevenDaysAgo)
     setEndDate(today)
+    setFilterHeading('Riwayat Transaksi 1 Minggu Terakhir')
   }
 
   const handleLast30Days = () => {
@@ -138,6 +153,7 @@ const TransactionHistory = () => {
     thirtyDaysAgo.setDate(today.getDate() - 30)
     setSelectedDate(thirtyDaysAgo)
     setEndDate(today)
+    setFilterHeading('Riwayat Transaksi 30 Hari Terakhir')
   }
 
   const handleLastYear = () => {
@@ -146,6 +162,7 @@ const TransactionHistory = () => {
     lastYear.setFullYear(today.getFullYear() - 1)
     setSelectedDate(lastYear)
     setEndDate(today)
+    setFilterHeading('Riwayat Transaksi 1 Tahun Terakhir')
   }
 
   const viewReceipt = async transactionId => {
@@ -167,6 +184,28 @@ const TransactionHistory = () => {
       setLoading(false)
     }
   }
+  
+  const handleDateRangeChange = (dates) => {
+    const [start, end] = dates;
+    setSelectedDate(start);
+    setEndDate(end);
+    if (start && end) {
+      const formattedStart = start.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const formattedEnd = end.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      setFilterHeading(`Riwayat Transaksi ${formattedStart} - ${formattedEnd}`);
+    } else if (start) {
+      const formattedStart = start.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      setFilterHeading(`Riwayat Transaksi Tanggal ${formattedStart}`);
+    } else {
+      setFilterHeading('Riwayat Transaksi');
+    }
+  };
+
+  const CustomDatePickerButton = React.forwardRef(({ onClick }, ref) => (
+        <button onClick={onClick} ref={ref} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+          <img src={calendarIcon} alt="Pilih Tanggal" style={styles.calendarIcon} />
+        </button>
+      ));
 
   const closeReceipt = () => {
     setSelectedReceipt(null)
@@ -182,42 +221,33 @@ const TransactionHistory = () => {
 
   return (
     <div style={styles.container}>
-      <h2>Riwayat Transaksi</h2>
-
-      <div style={styles.buttonGroup}>
-        <button onClick={handleLast1Days} style={styles.filterButton}>
-          Hari Ini
-        </button>
-        <button onClick={handleLast7Days} style={styles.filterButton}>
-          1 Minggu Terakhir
-        </button>
-        <button onClick={handleLast30Days} style={styles.filterButton}>
-          30 Hari Terakhir
-        </button>
-        <button onClick={handleLastYear} style={styles.filterButton}>
-          1 Tahun Terakhir
-        </button>
+      <div style={styles.header}>
+        <h2>{filterHeading}</h2>
+        <div style={styles.controlsRight}>
+        <div style={styles.datePicker}>
+            <label htmlFor="dateRangePicker" style={{ marginRight: '10px' }}></label>
+            <DatePicker
+            id="dateRangePicker"
+            selected={selectedDate}
+            onChange={handleDateRangeChange}
+            startDate={selectedDate}
+            endDate={endDate}
+            selectsRange
+            dateFormat="dd/MM/yyyy"
+            placeholderText="Pilih tanggal atau rentang"
+            customInput={<CustomDatePickerButton />}
+          />
+          </div>
+          <div style={styles.buttonGroup}>
+            <button onClick={handleLast1Days} style={styles.filterButton}>Hari Ini</button>
+            <button onClick={handleLast7Days} style={styles.filterButton}>1 Minggu Terakhir</button>
+            <button onClick={handleLast30Days} style={styles.filterButton}>30 Hari Terakhir</button>
+            <button onClick={handleLastYear} style={styles.filterButton}>1 Tahun Terakhir</button>
+          </div>
+          
+        </div>
       </div>
-
-      <div style={styles.filterContainer}>
-        <label htmlFor='dateRangePicker' style={styles.label}>
-          Filter berdasarkan tanggal:
-        </label>
-        <DatePicker
-          id='dateRangePicker'
-          selected={selectedDate}
-          onChange={dates => {
-            const [start, end] = dates
-            setSelectedDate(start)
-            setEndDate(end)
-          }}
-          startDate={selectedDate}
-          endDate={endDate}
-          selectsRange
-          dateFormat='dd/MM/yyyy'
-          placeholderText='Pilih tanggal atau rentang'
-        />
-      </div>
+      <hr />
 
       {filteredTransactions.length > 0 ? (
         <ul style={styles.transactionList}>
@@ -230,10 +260,17 @@ const TransactionHistory = () => {
           {filteredTransactions.map(transaction => {
             //handle null dates
             const formattedDate = transaction.date
-              ? transaction.date.toLocaleDateString('id-ID')
+              ? transaction.date.toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                })
               : 'Invalid Date'
             const formattedTime = transaction.date
-              ? transaction.date.toLocaleTimeString('id-ID')
+              ? transaction.date.toLocaleTimeString('id-ID', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
               : 'Invalid Time'
             return (
               <li key={transaction.id} style={styles.listItem}>
@@ -280,9 +317,27 @@ const TransactionHistory = () => {
 }
 
 const styles = {
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between', // Keep space-between
+    marginBottom: '15px',
+  },
+  controlsRight: {
+    display: 'flex',
+    alignItems: 'center', // Align buttons and date picker horizontally
+    gap: '20px', // Space between buttons and date picker
+  },
+  buttonGroupLeft: {
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center',
+  },
+  datePickerRight: {
+    marginLeft: 'auto',
+  },
   container: {
-    padding: '20px',
-    fontFamily: 'Arial, sans-serif'
+    padding: '20px'
   },
   transactionList: {
     listStyle: 'none',
@@ -326,6 +381,11 @@ const styles = {
     fontSize: '0.9rem'
   },
 
+  calendarIcon: {
+    width: '25px', // Adjust the width as needed
+    height: '25px', // Adjust the height as needed
+    
+  },
   modal: {
     position: 'fixed',
     top: '50%',
