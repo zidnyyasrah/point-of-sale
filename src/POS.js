@@ -3,6 +3,7 @@ import { formatRupiah } from "./components/utils/format"; // Utility for formatt
 import { toast } from 'react-toastify'; // For showing notifications
 import 'react-toastify/dist/ReactToastify.css'; // Styles for toast notifications
 import Receipt from './components/Receipt'; // Component to display the receipt
+import logo from './assets/logo.svg';
 
 const POS = () => {
   const [searchQuery, setSearchQuery] = useState(""); // State for the search input
@@ -44,6 +45,7 @@ const POS = () => {
 
     // Filter products based on the search query
     if (query) {
+      setIsSearchFocused(true); // Ensure focus state is true when there's a query
       const filtered = allProducts.filter((product) =>
         product.name.toLowerCase().includes(query.toLowerCase()) // Case-insensitive search
       );
@@ -52,31 +54,33 @@ const POS = () => {
     } else {
       setFilteredProducts([]); // Clear the filtered products if the query is empty
       setSelectedProductIndex(-1); // Reset the selected product index
+      setIsSearchFocused(false); // Set focus state to false if query is empty
     }
   };
 
-  // Function to handle focus event on search input
-  const handleSearchFocus = () => {
-    setIsSearchFocused(true); // Set search focus to true
-    // If there's a search query, filter the products
-    if (searchQuery && allProducts.length > 0) {
-      const filtered = allProducts.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredProducts(filtered);
-      setSelectedProductIndex(filtered.length > 0 ? 0 : -1);
-    }
-  };
-
-  // Function to handle blur event on search input
-  const handleSearchBlur = () => {
-    // Optionally keep the list if there's a query, or hide if empty
-    if (!searchQuery) {
-      setIsSearchFocused(false); // Set search focus to false
-      setFilteredProducts([]); // Clear the filtered products
-      setSelectedProductIndex(-1); // Reset selected product index
-    }
-  };
+    // Function to handle focus event on search input
+    const handleSearchFocus = () => {
+      setIsSearchFocused(true); // Set search focus to true
+      // Always filter based on the current search query when focused
+      if (searchQuery && allProducts.length > 0) {
+        const filtered = allProducts.filter((product) =>
+          product.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredProducts(filtered);
+        setSelectedProductIndex(filtered.length > 0 ? 0 : -1);
+      } else {
+        setFilteredProducts([]);
+        setSelectedProductIndex(-1);
+      }
+    };
+  
+    // Function to handle blur event on search input
+    const handleSearchBlur = () => {
+      // Add a small delay to allow clicks on recommendations to register
+      setTimeout(() => {
+        setIsSearchFocused(false);
+      }, 100); // Adjust the delay as needed
+    };
 
   // Function to add a product to the shopping cart
   const addItemToCart = (product) => {
@@ -133,6 +137,11 @@ const POS = () => {
     } else {
       toast.warn("Keranjang belanja kosong!", { position: "top-right", autoClose: 2000 }); // Show warning if the cart is empty
     }
+  };
+
+  // Function to cancel the transaction process
+  const handleCancelTransaction = () => {
+    setCartItems([]); // Set cartItems to an empty array to remove all items
   };
 
   // Function to confirm the checkout and process the transaction
@@ -279,17 +288,29 @@ const POS = () => {
       display: "flex",
       flexDirection: "column",
       gap: "20px",
+      position: "relative",
     },
     topTotal: {
       backgroundColor: "#e0e0e0",
       padding: "15px",
       borderRadius: "8px",
-      textAlign: "right",
+      display: "flex", // Make it a flex container
+      justifyContent: "space-between", // Put space between the two h2 elements
+      alignItems: "center", // Vertically align the h2 elements in the middle (optional)
+    },
+    topLogo: {
+      margin: 0, // Remove default margin
+      fontSize: "2em", // Adjust font size as needed
+      color: "black", // Or your desired color for the left total
+    },
+    logoImage: {
+      height: '80px', // Adjust the height as needed
     },
     totalAmount: {
-      margin: 0,
-      fontSize: "2em",
+      margin: 0, // Remove default margin
+      fontSize: "4em",
       color: "green",
+      textAlign: "right", // Align text to the right within its container
     },
     mainContent: {
       display: "flex",
@@ -301,30 +322,42 @@ const POS = () => {
       padding: "15px",
       borderRadius: "8px",
       boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+      position: "relative",
+    },
+    searchContainer: { 
+      position: "relative",
     },
     searchInput: {
-      width: "100%",
+      width: "98%",
       padding: "10px",
-      marginBottom: "15px",
+      marginBottom: "10px",
       border: "1px solid #ccc",
       borderRadius: "4px",
       fontSize: "16px",
     },
     productList: {
+      position: "absolute", // Make it float
+      top: "calc(100% + 5px)", // Position it just below the input
+      left: 0,
+      right: 0,
+      backgroundColor: "white",
       border: "1px solid #ddd",
       borderRadius: "4px",
-      marginBottom: "15px",
-      padding: "10px",
+      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+      zIndex: 10, // Ensure it's above other elements
+      maxHeight: "200px", // Optional: Add a maximum height for scrolling
+      overflowY: "auto", // Optional: Enable scrolling if the list is long
     },
     productItem: {
       display: "flex",
       justifyContent: "space-between",
-      padding: "8px 0",
+      padding: "8px 15px",
       borderBottom: "1px solid #eee",
       cursor: "pointer",
     },
     cartTable: {
       marginTop: "15px",
+      padding: "0px 10px",
       border: "1px solid #ddd",
       borderRadius: "4px",
       overflow: "hidden",
@@ -355,20 +388,21 @@ const POS = () => {
       backgroundColor: "#ff6347",
       color: "white",
       border: "none",
-      padding: "8px 12px",
+      padding: "8px 10px",
       borderRadius: "4px",
       cursor: "pointer",
       fontSize: "14px",
     },
     rightArea: {
-      flex: 1,
+      flex: 0.4,
       backgroundColor: "white",
       padding: "15px",
       borderRadius: "8px",
       boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
       display: "flex",
       flexDirection: "column",
-      alignItems: "flex-end",
+      justifyContent: "space-between",
+      height: '100%'
     },
     checkoutButton: {
       backgroundColor: "green",
@@ -378,8 +412,30 @@ const POS = () => {
       borderRadius: "8px",
       cursor: "pointer",
       fontSize: "18px",
+      marginBottom: "15px",
     },
+    
     checkoutModal: {
+      position: "fixed",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      backgroundColor: "white",
+      padding: "20px",
+      borderRadius: "8px",
+      boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)",
+      zIndex: 1000,
+    },
+    cancelTransactionButton: {
+      backgroundColor: "#ff6347",
+      color: "white",
+      border: "none",
+      padding: "15px 30px",
+      borderRadius: "8px",
+      cursor: "pointer",
+      fontSize: "18px",
+    },
+    cancelTransactionModal: {
       position: "fixed",
       top: "50%",
       left: "50%",
@@ -416,46 +472,49 @@ const POS = () => {
   return (
     <div style={styles.container}>
       {/* Display the total amount of the items in the cart */}
+        
       <div style={styles.topTotal}>
-        <h2 style={styles.totalAmount}>{formatRupiah(total)}</h2>
+       <img src={logo} alt="Your Company Logo" style={styles.logoImage} />
+       <h2 style={styles.totalAmount}>{formatRupiah(total)}</h2>
       </div>
 
       <div style={styles.mainContent}>
         {/* Left section: Product search and cart display */}
         <div style={styles.itemArea}>
-          {/* Search input for finding products */}
-          <input
-            ref={searchInputRef}
-            type="text"
-            style={styles.searchInput}
-            placeholder="Cari Produk..."
-            value={searchQuery}
-            onChange={handleSearch}
-            onFocus={handleSearchFocus}
-            onBlur={handleSearchBlur}
-            onKeyDown={handleKeyDown}
-          />
+          <div style={styles.searchContainer}>
+            {/* Search input for finding products */}
+            <input
+              ref={searchInputRef}
+              type="text"
+              style={styles.searchInput}
+              placeholder="Cari Produk..."
+              value={searchQuery}
+              onChange={handleSearch}
+              onFocus={handleSearchFocus} 
+              onBlur={handleSearchBlur}
+              onKeyDown={handleKeyDown}
+            />
 
-          {/* Display product recommendations based on the search query */}
-          {isSearchFocused && filteredProducts.length > 0 && (
-            <div style={styles.productList}>
-              <h3>Pilih Produk</h3>
-              {filteredProducts.map((product, index) => (
-                <div
-                  key={product.id}
-                  style={{
-                    ...styles.productItem,
-                    backgroundColor: index === selectedProductIndex ? "#e0f7fa" : "transparent", // Highlight selected
-                    cursor: "pointer",
-                  }}
-                  onClick={() => addItemToCart(product)} // Add to cart on click
-                >
-                  <span>{product.name}</span>
-                  <span>{formatRupiah(product.price_sell)}</span>
-                </div>
-              ))}
-            </div>
-          )}
+            {/* Display product recommendations based on the search query */}
+            {isSearchFocused && filteredProducts.length > 0 && (
+              <div style={styles.productList}>
+                {filteredProducts.map((product, index) => (
+                  <div
+                    key={product.id}
+                    style={{
+                      ...styles.productItem,
+                      backgroundColor: index === selectedProductIndex ? "#e0f7fa" : "transparent",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => addItemToCart(product)}
+                  >
+                    <span>{product.name}</span>
+                    <span>{formatRupiah(product.price_sell)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Display the items in the shopping cart */}
           {cartItems.length > 0 && (
@@ -491,20 +550,20 @@ const POS = () => {
               ))}
             </div>
           )}
-
-          {/* Message when the cart is empty and no search is active */}
-          {cartItems.length === 0 && !isSearchFocused && !searchQuery && (
-            <p>Mulai cari produk untuk ditambahkan ke keranjang.</p>
-          )}
         </div>
 
-        {/* Right section: Checkout button */}
+        {/* Right section: Checkout and Cancel buttons */}
         <div style={styles.rightArea}>
           <button onClick={handleCheckout} style={styles.checkoutButton}>
             Checkout
           </button>
+          <button onClick={handleCancelTransaction} style={styles.cancelTransactionButton}>
+            Cancel
+          </button>
         </div>
       </div>
+
+     
 
       {/* Checkout confirmation modal */}
       {showCheckout && (

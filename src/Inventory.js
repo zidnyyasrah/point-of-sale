@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { formatRupiah } from "./components/utils/format";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import deleteIcon from './assets/remove.png'; 
 
 const Inventory = () => {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
@@ -33,8 +34,8 @@ const Inventory = () => {
   const openAddProductModal = () => {
     setIsAddProductModalOpen(true);
     setNewProductName("");
-    setNewProductPriceSell("");
     setNewProductPriceBuy("");
+    setNewProductPriceSell("");
     setNewProductStock("");
   };
 
@@ -51,8 +52,8 @@ const Inventory = () => {
         },
         body: JSON.stringify({
           name: newProductName,
+          price_buy: parseFloat(newProductPriceBuy),
           price_sell: parseFloat(newProductPriceSell),
-          price_buy: parseFloat(newProductPriceSell),
           stock: parseInt(newProductStock),
         }),
       });
@@ -66,6 +67,28 @@ const Inventory = () => {
     } catch (error) {
       console.error('Error adding product:', error);
       toast.error('Gagal menambahkan produk.', { position: 'top-right', autoClose: 3000 });
+    }
+  };
+
+  const deleteProduct = async (id) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
+      try {
+        const response = await fetch(`http://localhost:5001/api/items/${id}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Gagal menghapus produk:', response.status, errorData);
+          toast.error(`Gagal menghapus produk: ${response.statusText}`, { position: 'top-right', autoClose: 3000 });
+          return;
+        }
+        // Update the inventory state by removing the deleted item
+        setInventory(inventory.filter(item => item.id !== id));
+        toast.success('Produk berhasil dihapus!', { position: 'top-right', autoClose: 2000 });
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        toast.error('Terjadi kesalahan saat menghapus produk.', { position: 'top-right', autoClose: 3000 });
+      }
     }
   };
 
@@ -114,14 +137,31 @@ const Inventory = () => {
   return (
     <div style={styles.container}>
       <h2>Manage Inventory</h2>
-
-      <button style={styles.addButton} onClick={openAddProductModal}>
-        Tambah Produk
-      </button>
+      <div style={styles.header}>
+        
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}> {/* Container for controls */}
+          <div style={styles.leftControls}>
+            {/* Add more buttons here if needed */}
+          </div>
+          <div style={styles.searchContainer}>
+            <input
+              type="text"
+              style={styles.searchInput}
+              placeholder="Cari Produk"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <button style={styles.addButton} onClick={openAddProductModal}>
+            Tambah Produk
+          </button>
+        </div>
+      </div>
 
       {isAddProductModalOpen && (
         <div style={styles.modal}>
-          <h3>Tambah Produk Baru</h3>
+          <h3 style={styles.addProductHeading}>Tambah Produk Baru </h3>
+          <hr style={styles.lineBreak}></hr>
           <div style={styles.formRow}>
             <label style={styles.label}>Nama Barang</label>
             <input
@@ -139,7 +179,7 @@ const Inventory = () => {
               style={styles.input}
               placeholder="Harga Beli"
               value={newProductPriceBuy}
-              onChange={(e) => setNewProductPriceSell(e.target.value)}
+              onChange={(e) => setNewProductPriceBuy(e.target.value)}
             />
           </div>
           <div style={styles.formRow}>
@@ -149,7 +189,7 @@ const Inventory = () => {
               style={styles.input}
               placeholder="Harga Jual"
               value={newProductPriceSell}
-              onChange={(e) => setNewProductPriceBuy(e.target.value)}
+              onChange={(e) => setNewProductPriceSell(e.target.value)}
             />
           </div>
           <div style={styles.formRow}>
@@ -173,43 +213,47 @@ const Inventory = () => {
         </div>
       )}
 
-      <div style={styles.searchContainer}>
-        <input
-          type="text"
-          style={styles.searchInput}
-          placeholder="Cari Produk"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      
 
       <h3>Daftar Produk</h3>
       {filteredProducts.length > 0 ? (
         <ul style={styles.productList}>
           <li style={{ ...styles.listItem, fontWeight: 'bold' }}>
-            <span style={{ flex: 0.5 }}>ID</span>
-            <span style={{ flex: 2 }}>Nama Barang</span>
-            <span style={{ flex: 1, textAlign: "right" }}>Harga Beli</span>
-            <span style={{ flex: 1, textAlign: "right" }}>Harga Jual</span>
-            <span style={{ flex: 1, textAlign: "right" }}>Stok</span>
+            <span style={{ flex: 0.3 }}>ID</span>
+            <span style={{ flex: 1 }}>Nama Barang</span>
+            <span style={{ flex: 0.5, textAlign: "right" }}>Harga Beli</span>
+            <span style={{ flex: 0.5, textAlign: "right" }}>Harga Jual</span>
+            <span style={{ flex: 0.3, textAlign: "right" }}>Stok</span>
+            <span style={{ flex: 0.3, textAlign: "right" }}>Hapus</span>
           </li>
           {filteredProducts.map((product) => (
             <li key={product.id} style={styles.listItem}>
-              <span style={{ flex: 0.5 }}>{product.id}</span>
-              <span style={{ flex: 2 }}>{product.name}</span>
-              <span style={{ flex: 1, textAlign: "right" }}>
+              {/* ID */}
+              <span style={{ flex: 0.3 }}>{product.id}</span>
+              {/* Item Name */}
+              <span style={{ flex: 1 }}>{product.name}</span>
+              {/* Price Buy */}
+              <span style={{ flex: 0.5, textAlign: "right" }}>
                 {formatRupiah(product.price_buy)}
               </span>
-              <span style={{ flex: 1.5, textAlign: "right" }}>
+              {/* Price Sell */}
+              <span style={{ flex: 0.5, textAlign: "right" }}>
                 {formatRupiah(product.price_sell)}
               </span>
-              <span style={{ flex: 1, textAlign: "right", display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+              {/* Stock */}
+              <span style={{ flex: 0.3, textAlign: "right", display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
                 <input
                   type="number"
                   style={styles.stockInput}
                   defaultValue={product.stock}
                   onBlur={(e) => handleStockChange(product.id, e.target.value)}
                 />
+              </span>
+              {/* Delete Product */}
+              <span style={{ flex: 0.3, textAlign: "right", display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+              <button onClick={() => deleteProduct(product.id)} style={styles.deleteButton}>
+              <img src={deleteIcon} alt="Hapus" style={styles.deleteIcon} />
+              </button>
               </span>
             </li>
           ))}
@@ -222,9 +266,19 @@ const Inventory = () => {
 };
 
 const styles = {
+  header: {
+    display: "flex", // Make the header a flex container
+    justifyContent: "space-between", // Initially space out elements
+    alignItems: "center", // Vertically align items in the center
+    marginBottom: "20px",
+  },
   container: {
     padding: "20px",
     fontFamily: "Arial, sans-serif",
+  },
+  controls: {
+    display: "flex", // Container for button(s) and search bar
+    alignItems: "center",
   },
   addButton: {
     padding: "10px 15px",
@@ -234,6 +288,35 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     marginBottom: "15px",
+    marginRight: "10px", 
+    marginLeft: "40px", 
+    boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
+  },
+  
+  deleteButton: {
+    backgroundColor: 'transparent', // Make the button background transparent
+    border: 'none',
+    padding: 0, // Remove default button padding
+    cursor: 'pointer',
+  },
+  deleteIcon: {
+    width: '20px', // Adjust the width as needed
+    height: '20px', // Adjust the height as needed
+
+  },
+  searchContainer: {
+    marginBottom: "15px",
+    boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
+    flexGrow: 1,
+  },
+  searchInput: {
+    padding: "10px",
+    borderRadius: "5px",
+    border: "1.5px solid #ccc",
+    fontSize: "15px",
+    flexGrow: 1, // Allow it to take up remaining space
+    marginRight: "10px", // Space from the button
+    width: "100%"
   },
   modal: {
     position: 'fixed',
@@ -241,12 +324,23 @@ const styles = {
     left: '50%',
     transform: 'translate(-50%, -50%)',
     backgroundColor: 'white',
-    padding: '20px',
+    padding: '10px',
     borderRadius: '8px',
     boxShadow: '0 0 10px rgba(0, 0, 0, 0.2)',
     zIndex: 1000,
-    width: '300px',
+    width: '500px',
   },
+  addProductHeading: {
+    textAlign: 'center',
+    padding: '2px',
+    marginBottom: '15px',
+  },
+  lineBreak: {
+    width: '100%',
+    marginTop: '25px',
+    marginBottom: '25px',
+  },
+
   formRow: {
     display: 'flex',
     flexDirection: 'row',
@@ -254,16 +348,11 @@ const styles = {
     marginBottom: '10px',
   },
   label: {
-    marginRight: '10px',
+    marginRight: '20px',
+    marginBottom: '10px',
     width: '100px',
     textAlign: 'left',
     display: 'inline-block'
-  },
-  input: {
-    padding: '8px',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    width: '200px',
   },
   modalButtons: {
     display: 'flex',
@@ -292,17 +381,9 @@ const styles = {
     border: "1px solid #ccc",
     borderRadius: "4px",
     marginBottom: "10px",
-    width: "250px",
+    width: "360px",
   },
-  searchContainer: {
-    marginBottom: "20px",
-  },
-  searchInput: {
-    width: "300px",
-    padding: "8px",
-    border: "1px solid #ccc",
-    borderRadius: "4px",
-  },
+  
   productList: {
     listStyle: "none",
     padding: 0,

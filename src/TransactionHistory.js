@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import Receipt from "./components/Receipt"; // Reusing your Receipt component
 import { formatRupiah } from './components/utils/format';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const TransactionHistory = () => {
   const [transactions, setTransactions] = useState([]);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
     fetchTransactions();
@@ -54,6 +57,7 @@ const TransactionHistory = () => {
     }
   };
 
+  
   const viewReceipt = async (transactionId) => {
     setLoading(true);
     setError(null);
@@ -92,6 +96,7 @@ const TransactionHistory = () => {
           <li style={{ ...styles.listItem, fontWeight: 'bold' }}>
             <span>Tanggal</span>
             <span>Waktu</span>
+            <span>Total</span>
             <span>Aksi</span>
           </li>
           {transactions.map(transaction => {
@@ -105,6 +110,9 @@ const TransactionHistory = () => {
                 {/* Format the time using toLocaleTimeString */}
                 <span>{formattedTime}</span>
                 <span>
+                {formatRupiah(transaction.total)}
+                </span>
+                <span>
                   <button style={styles.viewReceiptButton} onClick={() => viewReceipt(transaction.id)}>
                     Lihat Resi
                   </button>
@@ -113,9 +121,20 @@ const TransactionHistory = () => {
             )
           })}
         </ul>
+        
       ) : (
         <p>Tidak ada riwayat transaksi.</p>
       )}
+      
+
+      <h2>Pendapatan Harian</h2>
+<span>Total Pendapatan Harian :{' '}
+  {formatRupiah(transactions.reduce((accumulator, currentValue) => {
+    // Make sure currentValue.total is treated as a number
+    const totalAsNumber = Number(currentValue.total);
+    return accumulator + (isNaN(totalAsNumber) ? 0 : totalAsNumber);
+  }, 0))}
+</span>
 
       {selectedReceipt && (
         <div style={styles.modal}>
@@ -137,11 +156,11 @@ const styles = {
   },
   listItem: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "10px",
-    padding: "10px",
+    gridTemplateColumns: "1fr 1fr 1fr 0.5fr",
+    gap: "1px",
+    padding: "5px",
     borderBottom: "1px solid #eee",
-    alignItems: "center",
+    alignItems: "left",
   },
   viewReceiptButton: {
     backgroundColor: "#007bff",

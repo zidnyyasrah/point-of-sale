@@ -24,8 +24,8 @@ db.run(`
   CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    price_sell REAL NOT NULL,
     price_buy REAL NOT NULL,
+    price_sell REAL NOT NULL,
     stock INTEGER NOT NULL
   )
 `, (err) => {
@@ -41,17 +41,17 @@ db.run(`
                 if (count === 0) {
                     // Insert initial data
                     const initialItems = [
-                        { name: 'Mie Goreng', price_sell: 10000, price_buy: 5000, stock: 100 },
-                        { name: 'Nasi Goreng', price_sell: 12000, price_buy: 10000, stock: 50 },
-                        { name: 'Teh', price_sell: 2000, price_buy: 1000, stock: 150 }
+                        { name: 'Mie Goreng',  price_buy: 5000,price_sell: 10000, stock: 100 },
+                        { name: 'Nasi Goreng', price_buy: 10000,price_sell: 12000,  stock: 50 },
+                        { name: 'Teh', price_buy: 1000, price_sell: 2000,  stock: 150 }
                     ];
 
                     const insertStmt = db.prepare(
-                        "INSERT INTO items (name, price_sell, price_buy, stock) VALUES (?, ?, ?, ?)"
+                        "INSERT INTO items (name,  price_buy, price_sell, stock) VALUES (?, ?, ?, ?)"
                     );
 
                     initialItems.forEach((item) => {
-                        insertStmt.run(item.name, item.price_sell, item.price_buy, item.stock);
+                        insertStmt.run(item.name, item.price_buy, item.price_sell, item.stock);
                     });
                     insertStmt.finalize();
                     console.log("Initial items inserted.");
@@ -135,6 +135,49 @@ app.get('/api/items/:id', (req, res) => {
     });
 });
 
+// Delete a product
+app.delete('/api/items/:id', (req, res) => {
+    const id = req.params.id;
+    const sql = 'DELETE FROM items WHERE id = ?';
+    db.run(sql, [id], function (err) {
+      if (err) {
+        console.error('Error deleting item:', err.message);
+        res.status(500).json({ message: 'Failed to delete item' });
+        return;
+      }
+      if (this.changes === 0) {
+        res.status(404).json({ message: 'Item not found' });
+        return;
+      }
+      res.status(200).json({ message: `Item with ID ${id} deleted successfully` });
+    });
+  });
+
+// Add a new item
+app.post('/api/items', (req, res) => {
+    const { name, price_buy, price_sell, stock } = req.body;
+
+    if (!name || price_buy === undefined || price_sell === undefined || stock === undefined) {
+        return res.status(400).json({ message: 'Please provide name, buy price, sell price, and stock.' });
+    }
+
+    db.run(
+        'INSERT INTO items (name, price_buy, price_sell, stock) VALUES (?, ?, ?, ?)',
+        [name, price_buy, price_sell, stock],
+        function(err) {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            db.get('SELECT * FROM items WHERE id = ?', [this.lastID], (err, row) => {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+                res.status(201).json(row); // Respond with the newly created item data
+            });
+        }
+    );
+});
+
 // Update an item's stock
 app.put('/api/items/:id', (req, res) => {
     const id = req.params.id;
@@ -148,6 +191,8 @@ app.put('/api/items/:id', (req, res) => {
         res.json({ message: 'Stock updated successfully' });
     });
 });
+
+
 
 // Create a new transaction
 app.post('/api/transactions', async (req, res) => {

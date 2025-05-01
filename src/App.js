@@ -6,6 +6,7 @@ import Settings from "./Settings";
 import Accounts from "./Accounts";
 import Tabs from "./components/Tabs";
 import TransactionHistory from "./TransactionHistory";
+import Analytics from "./Analytics";
 
 function App() {
   const [selectedTab, setSelectedTab] = useState("pos");
@@ -25,6 +26,7 @@ function App() {
       {selectedTab === "settings" && <Settings />}
       {selectedTab === "transactionHistory" && <TransactionHistory />}
       {selectedTab === "accounts" && <Accounts />}
+      {selectedTab === "analytics" && <Analytics />}
     </div>
   );
 }
